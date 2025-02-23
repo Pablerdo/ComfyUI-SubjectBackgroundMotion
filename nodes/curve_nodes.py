@@ -44,7 +44,7 @@ class MultiCutAndDragOnPath:
             },
             "optional": {
                 "bg_image": ("IMAGE",),
-                "degrees": ("FLOAT", {"default": [0.0], "min": -360.0, "max": 360.0, "step": 0.1, "forceInput": True}),
+                "degrees": ("STRING", {"forceInput": True}),
             }
         }
 
@@ -152,8 +152,26 @@ class MultiCutAndDragOnPath:
         # Parse coordinate paths as array of arrays
         paths_list = json.loads(coordinate_paths)
         
+        # Convert degrees string to float array
+        try:
+            degrees_list = json.loads(degrees)
+            if isinstance(degrees_list, (int, float)):
+                degrees_list = [float(degrees_list)]
+            else:
+                degrees_list = [float(d) for d in degrees_list]
+        except json.JSONDecodeError:
+            # If not valid JSON, try to convert single string to float
+            try:
+                degrees_list = [float(degrees)]
+            except ValueError:
+                raise ValueError("Degrees must be a valid number or JSON array of numbers")
+
         if len(paths_list) != masks.shape[0]:
             raise ValueError(f"Number of coordinate paths ({len(paths_list)}) must match number of masks ({masks.shape[0]})")
+
+        # Verify that degrees array matches number of masks
+        if len(degrees_list) != masks.shape[0]:
+            raise ValueError(f"Number of rotation degrees ({len(degrees_list)}) must match number of masks ({masks.shape[0]})")
 
         batch_size = len(paths_list[0])  # Number of frames to generate
         images_list = []
@@ -211,7 +229,7 @@ class MultiCutAndDragOnPath:
                     'width': cut_width,
                     'height': cut_height,
                     'coords': paths_list[mask_idx],
-                    'degrees': degrees[mask_idx]  # Store the rotation amount for this region
+                    'degrees': degrees_list[mask_idx]  # Store the rotation amount for this region
                 })
 
         # Create batch of images with cut regions at different positions
