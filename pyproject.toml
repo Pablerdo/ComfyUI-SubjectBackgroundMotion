@@ -1,0 +1,15 @@
+[project]
+name = "comfyui-multicutanddrag"
+description = "Cut and and drag that allows you to cut and drag multiple images on a path"
+version = "1.0.5"
+license = {file = "LICENSE"}
+dependencies = ["librosa", "numpy", "pillow>=10.3.0", "scipy", "color-matcher", "matplotlib", "huggingface_hub"]
+
+[project.urls]
+Repository = "https://github.com/Pablerdo/ComfyUI-MultiCutAndDrag"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = "Pablerdo"
+DisplayName = "ComfyUI-MultiCutAndDrag"
+Icon = ""
