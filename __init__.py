@@ -1,7 +1,11 @@
 from .nodes.curve_nodes import MultiCutAndDragOnPath
 from .nodes.mask_nodes import BatchImageToMask
+from .nodes.image_nodes import LoadImagesFromBase64Array
+from .nodes.image_nodes import LoadImageFromBase64
 
 NODE_CONFIG = {
+    "LoadImageFromBase64": {"class": LoadImageFromBase64, "name": "LoadImageFromBase64"},
+    "LoadImagesFromBase64Array": {"class": LoadImagesFromBase64Array, "name": "LoadImagesFromBase64Array"},
     "MultiCutAndDragOnPath": {"class": MultiCutAndDragOnPath, "name": "MultiCutAndDragOnPath"},
     "BatchImageToMask": {"class": BatchImageToMask, "name": "BatchImageToMask"},
 }
