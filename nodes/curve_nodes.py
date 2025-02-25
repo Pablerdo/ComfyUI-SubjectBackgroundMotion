@@ -38,7 +38,7 @@ class MultiCutAndDragOnPath:
                 "frame_width": ("INT", {"default": 512,"min": 16, "max": 4096, "step": 1}),
                 "frame_height": ("INT", {"default": 512,"min": 16, "max": 4096, "step": 1}),
                 "inpaint": ("BOOLEAN", {"default": True}),
-                "mode": (["translate", "translate_and_rotate"], {"default": "translate"}),
+                "rotation": ("BOOLEAN", {"default": False}),
             },
             "optional": {
                 "bg_image": ("IMAGE",),

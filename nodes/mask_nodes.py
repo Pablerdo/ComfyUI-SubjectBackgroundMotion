@@ -31,7 +31,7 @@ class BatchImageToMask:
     FUNCTION = "batch_convert_to_mask"
     DESCRIPTION = "Converts RGB images to binary masks using grayscale conversion and thresholding, with optional morphological dilation"
 
-    def batch_convert_to_mask(self, images, threshold, dilation_amount, save_to_file=False, output_path="masks_output.png"):
+    def batch_convert_to_mask(self, images, threshold, dilation_amount):
         # Handle case where images is a tuple (common in ComfyUI node system)
         if isinstance(images, tuple):
             images = images[0]
