@@ -1,3 +1,4 @@
 test/
 __pycache__
 *.gif
+nodes/loader_nodes.py

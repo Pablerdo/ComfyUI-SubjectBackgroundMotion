@@ -47,27 +47,37 @@ class MultiCutAndDragOnPath:
         }
 
     def multi_cutanddrag(self, image, coordinate_paths, masks, frame_width, frame_height, inpaint, rotation=False, bg_image=None, degrees=[0.0]):
+        # Handle case where masks is a tuple (common in ComfyUI node system)
+        masks_tensor = masks
+        if isinstance(masks, tuple):
+            masks_tensor = masks[0]  # Extract the mask tensor from the tuple
+            
         if not rotation:
             return self._translate(image, coordinate_paths, masks, frame_width, frame_height, inpaint, bg_image)
         else:
             # Verify that degrees array matches number of masks
-            if len(degrees) != masks.shape[0]:
-                raise ValueError(f"Number of rotation degrees ({len(degrees)}) must match number of masks ({masks.shape[0]})")
+            if len(degrees) != masks_tensor.shape[0]:
+                raise ValueError(f"Number of rotation degrees ({len(degrees)}) must match number of masks ({masks_tensor.shape[0]})")
             return self._translate_and_rotate(image, coordinate_paths, masks, frame_width, frame_height, inpaint, degrees, bg_image)
 
     def _translate(self, image, coordinate_paths, masks, frame_width, frame_height, inpaint, bg_image=None):
         # Parse coordinate paths as array of arrays
         paths_list = json.loads(coordinate_paths)
         
-        if len(paths_list) != masks.shape[0]:
-            raise ValueError(f"Number of coordinate paths ({len(paths_list)}) must match number of masks ({masks.shape[0]})")
+        # Handle case where masks is a tuple
+        masks_tensor = masks
+        if isinstance(masks, tuple):
+            masks_tensor = masks[0]
+            
+        if len(paths_list) != masks_tensor.shape[0]:
+            raise ValueError(f"Number of coordinate paths ({len(paths_list)}) must match number of masks ({masks_tensor.shape[0]})")
 
         batch_size = len(paths_list[0])  # Number of frames to generate
         images_list = []
         masks_list = []
 
         # Convert input image to PIL
-        input_image = tensor2pil(image)[0]
+        input_image = tensor2pil(image[0])[0]
         
         # Create inpainted background once if needed
         if bg_image is None:
@@ -79,9 +89,24 @@ class MultiCutAndDragOnPath:
                 draw = ImageDraw.Draw(combined_mask)
                 border = 5
                 
-                for mask_idx in range(masks.shape[0]):
-                    mask_pil = tensor2pil(masks[mask_idx:mask_idx+1])[0]
-                    mask_array = np.array(mask_pil)
+                for mask_idx in range(masks_tensor.shape[0]):
+                    # Get mask and ensure it's properly shaped for PIL conversion
+                    mask_tensor = masks_tensor[mask_idx]
+                    
+                    # Handle potentially problematic dimensions
+                    if len(mask_tensor.shape) == 3 and mask_tensor.shape[0] == 1:
+                        mask_tensor = mask_tensor.squeeze(0)  # Remove singleton dimension
+                    
+                    # Convert to numpy array directly instead of using tensor2pil
+                    mask_array = mask_tensor.cpu().numpy()
+                    
+                    # Ensure mask_array is 2D
+                    if len(mask_array.shape) == 3:
+                        if mask_array.shape[0] == 1:
+                            mask_array = mask_array[0]  # Take first channel
+                        else:
+                            mask_array = mask_array.mean(axis=0)  # Average channels
+                    
                     y_indices, x_indices = np.where(mask_array > 0)
                     if len(x_indices) > 0 and len(y_indices) > 0:
                         x_min, x_max = x_indices.min(), x_indices.max()
@@ -100,9 +125,28 @@ class MultiCutAndDragOnPath:
 
         # Cut out each masked region and store info
         cut_regions = []
-        for mask_idx in range(masks.shape[0]):
-            mask_pil = tensor2pil(masks[mask_idx:mask_idx+1])[0]
-            mask_array = np.array(mask_pil)
+        for mask_idx in range(masks_tensor.shape[0]):
+            # Get mask and ensure it's properly shaped
+            mask_tensor = masks_tensor[mask_idx]
+            
+            # Handle potentially problematic dimensions
+            if len(mask_tensor.shape) == 3 and mask_tensor.shape[0] == 1:
+                mask_tensor = mask_tensor.squeeze(0)  # Remove singleton dimension
+            
+            # Convert to numpy array directly
+            mask_array = mask_tensor.cpu().numpy()
+            
+            # Ensure mask_array is 2D
+            if len(mask_array.shape) == 3:
+                if mask_array.shape[0] == 1:
+                    mask_array = mask_array[0]  # Take first channel
+                else:
+                    mask_array = mask_array.mean(axis=0)  # Average channels
+            
+            # Create PIL mask directly from the array
+            mask_pil = Image.fromarray((mask_array * 255).astype(np.uint8))
+            
+            # Rest of the processing remains the same
             y_indices, x_indices = np.where(mask_array > 0)
             
             if len(x_indices) > 0 and len(y_indices) > 0:
@@ -164,12 +208,17 @@ class MultiCutAndDragOnPath:
             except ValueError:
                 raise ValueError("Degrees must be a valid number or JSON array of numbers")
 
-        if len(paths_list) != masks.shape[0]:
-            raise ValueError(f"Number of coordinate paths ({len(paths_list)}) must match number of masks ({masks.shape[0]})")
+        # Handle case where masks is a tuple
+        masks_tensor = masks
+        if isinstance(masks, tuple):
+            masks_tensor = masks[0]
+
+        if len(paths_list) != masks_tensor.shape[0]:
+            raise ValueError(f"Number of coordinate paths ({len(paths_list)}) must match number of masks ({masks_tensor.shape[0]})")
 
         # Verify that degrees array matches number of masks
-        if len(degrees_list) != masks.shape[0]:
-            raise ValueError(f"Number of rotation degrees ({len(degrees_list)}) must match number of masks ({masks.shape[0]})")
+        if len(degrees_list) != masks_tensor.shape[0]:
+            raise ValueError(f"Number of rotation degrees ({len(degrees_list)}) must match number of masks ({masks_tensor.shape[0]})")
 
         batch_size = len(paths_list[0])  # Number of frames to generate
         images_list = []
@@ -188,8 +237,8 @@ class MultiCutAndDragOnPath:
                 draw = ImageDraw.Draw(combined_mask)
                 border = 5
                 
-                for mask_idx in range(masks.shape[0]):
-                    mask_pil = tensor2pil(masks[mask_idx:mask_idx+1])[0]
+                for mask_idx in range(masks_tensor.shape[0]):
+                    mask_pil = tensor2pil(masks_tensor[mask_idx:mask_idx+1])[0]
                     mask_array = np.array(mask_pil)
                     y_indices, x_indices = np.where(mask_array > 0)
                     if len(x_indices) > 0 and len(y_indices) > 0:
@@ -209,8 +258,8 @@ class MultiCutAndDragOnPath:
 
         # Cut out each masked region and store info
         cut_regions = []
-        for mask_idx in range(masks.shape[0]):
-            mask_pil = tensor2pil(masks[mask_idx:mask_idx+1])[0]
+        for mask_idx in range(masks_tensor.shape[0]):
+            mask_pil = tensor2pil(masks_tensor[mask_idx:mask_idx+1])[0]
             mask_array = np.array(mask_pil)
             y_indices, x_indices = np.where(mask_array > 0)
             
