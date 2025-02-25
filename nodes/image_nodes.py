@@ -3,7 +3,7 @@ import os
 
 import cv2
 from PIL import Image, ImageOps
-import folder_paths
+# import folder_paths
 import torch
 import numpy as np
 from io import BytesIO
