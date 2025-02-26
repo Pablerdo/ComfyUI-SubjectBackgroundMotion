@@ -89,52 +89,24 @@ class BatchImageToMask:
             
             dilated_masks = []
             for m in masks:
-                output = m.cpu().numpy().astype(np.float32)
-                for _ in range(dilation_amount):
-                    output = scipy.ndimage.grey_dilation(output, footprint=kernel)
-                dilated_masks.append(torch.from_numpy(output))
+                # Handle potential multichannel masks
+                if len(m.shape) > 2:  # If mask has shape [C, H, W]
+                    channels = []
+                    for channel in range(m.shape[0]):
+                        channel_data = m[channel].cpu().numpy().astype(np.float32)
+                        for _ in range(dilation_amount):
+                            channel_data = scipy.ndimage.grey_dilation(channel_data, footprint=kernel)
+                        channels.append(torch.from_numpy(channel_data))
+                    dilated_mask = torch.stack(channels)
+                else:  # Single channel [H, W]
+                    output = m.cpu().numpy().astype(np.float32)
+                    for _ in range(dilation_amount):
+                        output = scipy.ndimage.grey_dilation(output, footprint=kernel)
+                    dilated_mask = torch.from_numpy(output)
+                
+                dilated_masks.append(dilated_mask)
             
             masks = torch.stack(dilated_masks).to(images.device)
-
-        # # Save masks to file if requested
-        # if save_to_file:
-        #     # Create a large image to hold all masks side by side or in a grid
-        #     if B == 1:
-        #         # Just one mask, save it directly
-        #         mask_pil_result = tensor2pil(masks[0])
-        #         # Handle case where tensor2pil returns a list
-        #         if isinstance(mask_pil_result, list):
-        #             mask_pil = mask_pil_result[0]
-        #             print(f"PIL mask dimensions: {mask_pil.size}")
-        #         else:
-        #             mask_pil = mask_pil_result
-        #             print(f"PIL mask dimensions: {mask_pil.size}")
-                    
-        #         mask_pil = mask_pil.convert("L")  # Convert to grayscale
-        #         mask_pil.save(output_path)
-        #     else:
-        #         # Multiple masks, arrange in a grid
-        #         rows = int(np.ceil(np.sqrt(B)))
-        #         cols = int(np.ceil(B / rows))
-        #         grid_image = Image.new("L", (cols * W, rows * H), 0)
-                
-        #         for i in range(B):
-        #             mask_pil_result = tensor2pil(masks[i])
-        #             # Handle case where tensor2pil returns a list
-        #             if isinstance(mask_pil_result, list):
-        #                 mask_pil = mask_pil_result[0]
-        #                 print(f"PIL mask dimensions: {mask_pil.size}")
-        #             else:
-        #                 mask_pil = mask_pil_result
-        #                 print(f"PIL mask dimensions: {mask_pil.size}")
-                        
-        #             mask_pil = mask_pil.convert("L")  # Convert to grayscale
-        #             row = i // cols
-        #             col = i % cols
-        #             grid_image.paste(mask_pil, (col * W, row * H))
-                
-        #         grid_image.save(output_path)
-        #         print(f"Saved {B} masks to {output_path}")
 
         print(f"Mask tensor shape: {masks.shape}")
         print(f"Mask value range: {masks.min()} to {masks.max()}")
@@ -178,6 +150,10 @@ class MapTrajectoriesToSegmentedMasks:
         # Process each mask and trajectory
         translated_paths = []
         
+        # Ensure the test directory exists
+        # test_dir = os.path.join(script_directory, "test")
+        # os.makedirs(test_dir, exist_ok=True)
+        
         for i in range(B):
             # Get the mask and convert to numpy
             mask = masks[i]
@@ -202,6 +178,48 @@ class MapTrajectoriesToSegmentedMasks:
                 # Default to center if no mask points
                 centroid_x = W / 2
                 centroid_y = H / 2
+            
+            # Debug: Save mask with centroid marked
+            # Create a visualization image
+            # Ensure mask_np is 2D for visualization
+            # if len(mask_np.shape) > 2:
+            #     if mask_np.shape[0] > 1:
+            #         viz_mask = mask_np.mean(axis=0)
+            #     else:
+            #         viz_mask = mask_np[0]
+            # else:
+            #     viz_mask = mask_np
+                
+            # # Scale to 0-255 for PIL
+            # viz_mask_uint8 = (viz_mask * 255).astype(np.uint8)
+            
+            # # Create RGB image (convert grayscale to RGB)
+            # h, w = viz_mask.shape
+            # rgb_mask = np.stack([viz_mask_uint8] * 3, axis=2)  # Shape: [H, W, 3]
+            
+            # # Convert to PIL
+            # mask_pil = Image.fromarray(rgb_mask)
+            
+            # # Create a drawing context
+            # draw = ImageDraw.Draw(mask_pil)
+            
+            # # Draw a red circle at the centroid position (radius=5 pixels)
+            # radius = 5
+            # draw.ellipse(
+            #     (
+            #         centroid_x - radius, 
+            #         centroid_y - radius, 
+            #         centroid_x + radius, 
+            #         centroid_y + radius
+            #     ), 
+            #     fill='red', 
+            #     outline='red'
+            # )
+            
+            # # Save the debug image
+            # debug_filename = os.path.join(test_dir, f"mask_{i}_centroid.png")
+            # mask_pil.save(debug_filename)
+            # print(f"Debug mask with centroid saved to: {debug_filename}")
             
             # Get corresponding trajectory and translate it
             path = paths_list[i]
