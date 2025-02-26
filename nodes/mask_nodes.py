@@ -21,8 +21,6 @@ class BatchImageToMask:
                     "images": ("IMAGE",),
                     "threshold": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
                     "dilation_amount": ("INT", {"default": 0, "min": 0, "max": 100, "step": 1}),
-                    "save_to_file": ("BOOLEAN", {"default": False}),
-                    "output_path": ("STRING", {"default": "masks_output.png"})
                 }}
 
     CATEGORY = "PSNodes/masking"
