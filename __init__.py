@@ -1,16 +1,11 @@
-from .nodes.curve_nodes import MultiCutAndDragOnPath
+from .nodes.curve_nodes import MultiCutAndDragWithTruck
 from .nodes.mask_nodes import BatchImageToMask
-from .nodes.image_nodes import LoadImagesFromBase64Array
-from .nodes.image_nodes import LoadImageFromBase64
 from .nodes.mask_nodes import MapTrajectoriesToSegmentedMasks
 
 NODE_CONFIG = {
-    "LoadImageFromBase64": {"class": LoadImageFromBase64, "name": "LoadImageFromBase64"},
-    "LoadImagesFromBase64Array": {"class": LoadImagesFromBase64Array, "name": "LoadImagesFromBase64Array"},
-    "MultiCutAndDragOnPath": {"class": MultiCutAndDragOnPath, "name": "MultiCutAndDragOnPath"},
+    "MultiCutAndDragWithTruck": {"class": MultiCutAndDragWithTruck, "name": "MultiCutAndDragWithTruck"},
     "BatchImageToMask": {"class": BatchImageToMask, "name": "BatchImageToMask"},
     "MapTrajectoriesToSegmentedMasks": {"class": MapTrajectoriesToSegmentedMasks, "name": "MapTrajectoriesToSegmentedMasks"}
-
 }
 
 def generate_node_mappings(node_config):

@@ -10,15 +10,12 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utility.utility import pil2tensor, tensor2pil
-import io
-import base64
-        
 
-class MultiCutAndDragOnPath:
+class MultiCutAndDragWithTruck:
     RETURN_TYPES = ("IMAGE", "MASK",)
     RETURN_NAMES = ("image","mask", )
-    FUNCTION = "multi_cutanddrag" 
-    CATEGORY = "PSNodes/experimental"
+    FUNCTION = "multi_cut_and_drag_with_truck"
+    CATEGORY = "MultiCutAndDragWithTruck"
     DESCRIPTION = """
     Cut and drag parts of an image along specified coordinate paths.
     Coordinate paths should be an array of arrays containing coordinate objects, e.g.:
@@ -37,32 +34,43 @@ class MultiCutAndDragOnPath:
                 "masks": ("MASK",),
                 "frame_width": ("INT", {"default": 512,"min": 16, "max": 4096, "step": 1}),
                 "frame_height": ("INT", {"default": 512,"min": 16, "max": 4096, "step": 1}),
-                "inpaint": ("BOOLEAN", {"default": True}),
-                "rotation": ("BOOLEAN", {"default": False}),
+                # "rotation": ("BOOLEAN", {"default": False}),
+                "bg_image": ("IMAGE",),
+                "num_frames": ("INT", {"forceInput": True}),
             },
             "optional": {
-                "bg_image": ("IMAGE",),
-                "degrees": ("STRING", {"forceInput": True}),
+                "truck_vector": ("STRING", {"forceInput": True}),
+                # "degrees": ("STRING", {"forceInput": True}),
             }
         }
 
-    def multi_cutanddrag(self, image, coordinate_paths, masks, frame_width, frame_height, inpaint, rotation=False, bg_image=None, degrees=[0.0]):
+    def multi_cut_and_drag_with_truck(self, image, coordinate_paths, masks, frame_width, frame_height, bg_image=None, truck_vector=None, num_frames=49): # rotation=False, bg_image=None, truck_vector=None, num_frames=49, degrees=[0.0]):
+
+        if bg_image is None:
+            raise ValueError("Background image is required")
+                    
+        coordinate_paths_list = json.loads(coordinate_paths)
+
+        if len(coordinate_paths_list) != num_frames:
+            raise ValueError(f"Number of coordinate paths ({len(coordinate_paths_list)}) must match number of frames ({num_frames})")
+        
         # Handle case where masks is a tuple (common in ComfyUI node system)
         masks_tensor = masks
         if isinstance(masks, tuple):
             masks_tensor = masks[0]  # Extract the mask tensor from the tuple
             
-        if not rotation:
-            return self._translate(image, coordinate_paths, masks, frame_width, frame_height, inpaint, bg_image)
-        else:
-            # Verify that degrees array matches number of masks
-            if len(degrees) != masks_tensor.shape[0]:
-                raise ValueError(f"Number of rotation degrees ({len(degrees)}) must match number of masks ({masks_tensor.shape[0]})")
-            return self._translate_and_rotate(image, coordinate_paths, masks, frame_width, frame_height, inpaint, degrees, bg_image)
+        return self._translate_with_truck(image, coordinate_paths_list, masks, frame_width, frame_height, bg_image, truck_vector, num_frames)
+    
+        # if not rotation:
+        #     return self._translate_with_truck(image, coordinate_paths_list, masks, frame_width, frame_height, inpaint, bg_image, truck_vector, num_frames)
+        # else:
+        #     # Verify that degrees array matches number of masks
+        #     if len(degrees) != masks_tensor.shape[0]:
+        #         raise ValueError(f"Number of rotation degrees ({len(degrees)}) must match number of masks ({masks_tensor.shape[0]})")
+        #     return self._translate_and_rotate(image, coordinate_paths, masks, frame_width, frame_height, inpaint, degrees, bg_image)
 
-    def _translate(self, image, coordinate_paths, masks, frame_width, frame_height, inpaint, bg_image=None):
+    def _translate_with_truck(self, image, paths_list, masks, frame_width, frame_height, bg_image=None, truck_vector=None, num_frames=50):
         # Parse coordinate paths as array of arrays
-        paths_list = json.loads(coordinate_paths)
         
         # Handle case where masks is a tuple
         masks_tensor = masks
@@ -71,8 +79,7 @@ class MultiCutAndDragOnPath:
             
         if len(paths_list) != masks_tensor.shape[0]:
             raise ValueError(f"Number of coordinate paths ({len(paths_list)}) must match number of masks ({masks_tensor.shape[0]})")
-
-        batch_size = len(paths_list[0])  # Number of frames to generate
+        
         images_list = []
         masks_list = []
 
@@ -80,48 +87,61 @@ class MultiCutAndDragOnPath:
         input_image = tensor2pil(image[0])[0]
         
         # Create inpainted background once if needed
-        if bg_image is None:
-            background = input_image.copy()
-            if inpaint:
-                import cv2
-                # Create combined mask for all cut areas
-                combined_mask = Image.new("L", background.size, 0)
-                draw = ImageDraw.Draw(combined_mask)
-                border = 5
+        # if bg_image is None:
+        #     background = input_image.copy()
+        #     if inpaint:
+        #         import cv2
+        #         # Create combined mask for all cut areas
+        #         combined_mask = Image.new("L", background.size, 0)
+        #         draw = ImageDraw.Draw(combined_mask)
+        #         border = 5
                 
-                for mask_idx in range(masks_tensor.shape[0]):
-                    # Get mask and ensure it's properly shaped for PIL conversion
-                    mask_tensor = masks_tensor[mask_idx]
+        #         for mask_idx in range(masks_tensor.shape[0]):
+        #             # Get mask and ensure it's properly shaped for PIL conversion
+        #             mask_tensor = masks_tensor[mask_idx]
                     
-                    # Handle potentially problematic dimensions
-                    if len(mask_tensor.shape) == 3 and mask_tensor.shape[0] == 1:
-                        mask_tensor = mask_tensor.squeeze(0)  # Remove singleton dimension
+        #             # Handle potentially problematic dimensions
+        #             if len(mask_tensor.shape) == 3 and mask_tensor.shape[0] == 1:
+        #                 mask_tensor = mask_tensor.squeeze(0)  # Remove singleton dimension
                     
-                    # Convert to numpy array directly instead of using tensor2pil
-                    mask_array = mask_tensor.cpu().numpy()
+        #             # Convert to numpy array directly instead of using tensor2pil
+        #             mask_array = mask_tensor.cpu().numpy()
                     
-                    # Ensure mask_array is 2D
-                    if len(mask_array.shape) == 3:
-                        if mask_array.shape[0] == 1:
-                            mask_array = mask_array[0]  # Take first channel
-                        else:
-                            mask_array = mask_array.mean(axis=0)  # Average channels
+        #             # Ensure mask_array is 2D
+        #             if len(mask_array.shape) == 3:
+        #                 if mask_array.shape[0] == 1:
+        #                     mask_array = mask_array[0]  # Take first channel
+        #                 else:
+        #                     mask_array = mask_array.mean(axis=0)  # Average channels
                     
-                    y_indices, x_indices = np.where(mask_array > 0)
-                    if len(x_indices) > 0 and len(y_indices) > 0:
-                        x_min, x_max = x_indices.min(), x_indices.max()
-                        y_min, y_max = y_indices.min(), y_indices.max()
-                        draw.rectangle([x_min-border, y_min-border, x_max+border, y_max+border], fill=255)
+        #             y_indices, x_indices = np.where(mask_array > 0)
+        #             if len(x_indices) > 0 and len(y_indices) > 0:
+        #                 x_min, x_max = x_indices.min(), x_indices.max()
+        #                 y_min, y_max = y_indices.min(), y_indices.max()
+        #                 draw.rectangle([x_min-border, y_min-border, x_max+border, y_max+border], fill=255)
                 
-                background = cv2.inpaint(
-                    np.array(background), 
-                    np.array(combined_mask), 
-                    inpaintRadius=3, 
-                    flags=cv2.INPAINT_TELEA
-                )
-                background = Image.fromarray(background)
-        else:
-            background = tensor2pil(bg_image)[0]
+        #         background = cv2.inpaint(
+        #             np.array(background), 
+        #             np.array(combined_mask), 
+        #             inpaintRadius=3, 
+        #             flags=cv2.INPAINT_TELEA
+        #         )
+        #         background = Image.fromarray(background)
+        # else:
+
+        background = tensor2pil(bg_image)[0]
+
+        truck_vector = json.loads(truck_vector)
+        truck_trajectory = self._calculate_truck_trajectory(truck_vector, background.size[0], background.size[1], num_frames)
+
+        # Create a new back of background images that is the same size as the input image
+        background_images = []
+        for frame_idx in range(num_frames + 1):
+            background_images.append(background.copy())
+            # Create a new image with the background shifted by the truck trajectory
+            new_background = Image.new("RGB", background.size)
+            new_background.paste(background, (int(truck_trajectory[frame_idx]["x"]), int(truck_trajectory[frame_idx]["y"])))
+            background_images[frame_idx] = new_background
 
         # Cut out each masked region and store info
         cut_regions = []
@@ -165,8 +185,10 @@ class MultiCutAndDragOnPath:
                 })
 
         # Create batch of images with cut regions at different positions
-        for frame_idx in range(batch_size):
-            new_image = background.copy()
+        for frame_idx in range(num_frames + 1):
+            # Get the background image for this frame
+            # new_image = background.copy()
+            new_image = background_images[frame_idx].copy()
             new_mask = Image.new("L", (frame_width, frame_height), 0)
 
             # Place each cut region at its position for this frame
@@ -190,7 +212,7 @@ class MultiCutAndDragOnPath:
 
         return (out_images, out_masks)
 
-    def _translate_and_rotate(self, image, coordinate_paths, masks, frame_width, frame_height, inpaint, degrees, bg_image=None):
+    def _translate_and_rotate(self, image, coordinate_paths, masks, frame_width, frame_height, inpaint, degrees, bg_image=None, truck_vector=None, num_frames=49):
         # Parse coordinate paths as array of arrays
         paths_list = json.loads(coordinate_paths)
         
@@ -220,7 +242,6 @@ class MultiCutAndDragOnPath:
         if len(degrees_list) != masks_tensor.shape[0]:
             raise ValueError(f"Number of rotation degrees ({len(degrees_list)}) must match number of masks ({masks_tensor.shape[0]})")
 
-        batch_size = len(paths_list[0])  # Number of frames to generate
         images_list = []
         masks_list = []
 
@@ -280,14 +301,14 @@ class MultiCutAndDragOnPath:
                 })
 
         # Create batch of images with cut regions at different positions
-        for frame_idx in range(batch_size):
+        for frame_idx in range(num_frames + 1):
             new_image = background.copy()
             new_mask = Image.new("L", (frame_width, frame_height), 0)
 
             # Place each cut region at its position for this frame
             for region in cut_regions:
                 # Calculate rotation angle for this frame using the region's specific degrees
-                rotation_angle = (region['degrees'] * frame_idx) / (batch_size - 1)
+                rotation_angle = (region['degrees'] * frame_idx) / (num_frames)
                 
                 # Rotate the cut region and its mask
                 rotated_image = region['image'].rotate(rotation_angle, expand=True, resample=Image.BICUBIC)
@@ -316,3 +337,26 @@ class MultiCutAndDragOnPath:
         out_masks = torch.cat(masks_list, dim=0)
 
         return (out_images, out_masks)
+
+    def _calculate_truck_trajectory(self, truck_vector, frame_width, frame_height, num_frames):
+        # The truck trajectory will be the path of the top left of the original, inpainted background.
+
+        # Parse the truck vector
+        truck_vector = json.loads(truck_vector)
+        
+        # Extract the start and end points, the adjusted_tuck_vector is the full, raw distance that the bg_image will be moved by
+        adjusted_truck_vector = {"x": ((0.25 * frame_width) * truck_vector["x"]), "y": ((0.25 * frame_height) * truck_vector["y"])}
+        
+        # Calculate the trajectory, we want to go from the start point to the end point in num_frames steps. We are starting from the center of the image, 
+        # so the start point is the center of the image.
+
+        # The end point is the middle of the image plus the adjusted truck vector.
+        trajectory = []
+        for i in range(50):
+            trajectory.append({
+                "x": 0 + (adjusted_truck_vector["x"]) * i/num_frames,
+                "y": 0 + (adjusted_truck_vector["y"]) * i/num_frames
+            })
+
+        return trajectory
+    
