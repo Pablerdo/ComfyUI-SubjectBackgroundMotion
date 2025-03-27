@@ -23,7 +23,7 @@ class BatchImageToMask:
                     "dilation_amount": ("INT", {"default": 0, "min": 0, "max": 100, "step": 1}),
                 }}
 
-    CATEGORY = "MultiCutAndDragWithTruck"
+    CATEGORY = "SubjectBackgroundMotion"
     RETURN_TYPES = ("MASK",)
     RETURN_NAMES = ("MASKS",)
     FUNCTION = "batch_convert_to_mask"
@@ -121,7 +121,7 @@ class MapTrajectoriesToSegmentedMasks:
                     "trajectories": ("STRING", {"forceInput": True}),
                 }}
 
-    CATEGORY = "MultiCutAndDragWithTruck"
+    CATEGORY = "SubjectBackgroundMotion"
     RETURN_TYPES = ("MASK", "STRING")
     RETURN_NAMES = ("MASKS", "TRANSLATED_TRAJECTORIES")
     FUNCTION = "map_trajectories"

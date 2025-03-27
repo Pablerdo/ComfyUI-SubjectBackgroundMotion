@@ -15,7 +15,7 @@ class MultiCutAndDragWithTruck:
     RETURN_TYPES = ("IMAGE", "MASK",)
     RETURN_NAMES = ("image","mask", )
     FUNCTION = "multi_cut_and_drag_with_truck"
-    CATEGORY = "MultiCutAndDragWithTruck"
+    CATEGORY = "SubjectBackgroundMotion"
     DESCRIPTION = """
     Cut and drag parts of an image along specified coordinate paths.
     Coordinate paths should be an array of arrays containing coordinate objects, e.g.:
