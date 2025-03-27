@@ -1,10 +1,10 @@
-# ComfyUI-MultiCutAndDrag
+# ComfyUI-SubjectBackgroundMotion
 
 A ComfyUI extension that allows cutting and dragging multiple parts of an image along specified paths, with advanced masking capabilities.
 
 ## Features
 
-### MultiCutAndDragOnPath
+### MultiCutAndDragWithTruck
 
 This node allows you to cut out parts of an image based on masks and then animate them along specified coordinate paths.
 
@@ -52,15 +52,15 @@ This node aligns trajectory paths with mask centroids, allowing for more intuiti
 ### Method 1: Via ComfyUI Manager
 
 1. Open ComfyUI Manager
-2. Search for "MultiCutAndDrag"
+2. Search for "SubjectBackgroundMotion"
 3. Click Install
 
 ### Method 2: Manual Installation
 
 ```
 WORKDIR /comfyui/custom_nodes
-RUN git clone https://github.com/pablerdo/ComfyUI-MultiCutAndDrag.git --recursive
-WORKDIR /comfyui/custom_nodes/ComfyUI-MultiCutAndDrag
+RUN git clone https://github.com/pablerdo/ComfyUI-SubjectBackgroundMotion.git --recursive
+WORKDIR /comfyui/custom_nodes/ComfyUI-SubjectBackgroundMotion
 RUN git reset --hard (latestcommit hash)
 RUN if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
 RUN if [ -f install.py ]; then python install.py || echo "install script failed"; fi
@@ -72,7 +72,7 @@ RUN if [ -f install.py ]; then python install.py || echo "install script failed"
 1. Load an image and create masks for the areas you want to animate
 2. Use BatchImageToMask to convert segmentation images to proper masks if needed
 3. Define coordinate paths for each mask
-4. Connect them to MultiCutAndDragOnPath to create an animation sequence
+4. Connect them to MultiCutAndDragWithTruck to create an animation sequence
 5. Alternatively, use MapTrajectoriesToSegmentedMasks to automatically align trajectories with mask centroids
 
 ## Requirements
