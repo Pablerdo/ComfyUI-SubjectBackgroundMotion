@@ -283,9 +283,12 @@ class PadAndTranslateImageForOutpainting:
         masks = []
 
         # Create a gray background image
-        gray_background = Image.new("RGB", (pil_bg_image_width, pil_bg_image_height), color=(128, 128, 128))
+        # gray_background = Image.new("RGB", (pil_bg_image_width, pil_bg_image_height), color=(128, 128, 128))
         
-        # Create a mask image (black initially)
+        # making a black background image to experiment
+        gray_background = Image.new("RGB", (pil_bg_image_width, pil_bg_image_height), color=(0, 0, 0))
+
+        # Create a mask image white initially
         mask_image = Image.new("L", (pil_bg_image_width, pil_bg_image_height), color=255)
         
         # Calculate paste position
