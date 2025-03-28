@@ -104,8 +104,8 @@ class MultiCutAndDragWithTruck:
 
         adjusted_subject_trajectories = self._calculate_subject_trajectories_with_truck_vector(paths_list, adjusted_truck_vector, num_frames)
 
-        outpaint_x_margin = outpainted_background.size[0] - background.size[0] / 2
-        outpaint_y_margin = outpainted_background.size[1] - background.size[1] / 2
+        outpaint_x_margin = (outpainted_background.size[0] - background.size[0]) / 2
+        outpaint_y_margin = (outpainted_background.size[1] - background.size[1]) / 2
 
         # Create a new background images that is the same size as the input image
         background_images = [None] * num_frames
