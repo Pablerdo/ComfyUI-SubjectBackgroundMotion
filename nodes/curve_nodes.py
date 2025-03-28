@@ -37,6 +37,7 @@ class MultiCutAndDragWithTruck:
                 # "rotation": ("BOOLEAN", {"default": False}),
                 "bg_image": ("IMAGE",),
                 "final_bg_image": ("IMAGE",),
+                "outpainted_bg_image": ("IMAGE",),
                 "num_frames": ("INT", {"forceInput": True}),
             },
             "optional": {
@@ -45,7 +46,7 @@ class MultiCutAndDragWithTruck:
             }
         }
 
-    def multi_cut_and_drag_with_truck(self, image, coordinate_paths, masks, frame_width, frame_height, bg_image=None, final_bg_image=None, truck_vector=None, num_frames=49, ): # rotation=False, bg_image=None, truck_vector=None, num_frames=49, degrees=[0.0]):
+    def multi_cut_and_drag_with_truck(self, image, coordinate_paths, masks, frame_width, frame_height, bg_image=None, final_bg_image=None, truck_vector=None, outpainted_bg_image=None, num_frames=49): # rotation=False, bg_image=None, truck_vector=None, num_frames=49, degrees=[0.0]):
 
         if bg_image is None:
             raise ValueError("Background image is required")
@@ -65,7 +66,7 @@ class MultiCutAndDragWithTruck:
         if isinstance(masks, tuple):
             masks_tensor = masks[0]  # Extract the mask tensor from the tuple
             
-        return self._translate_with_truck(image, coordinate_paths_list, masks, frame_width, frame_height, bg_image, final_bg_image, truck_vector, num_frames)
+        return self._translate_with_truck(image, coordinate_paths_list, masks, frame_width, frame_height, bg_image, final_bg_image, truck_vector, outpainted_bg_image, num_frames)
     
         # if not rotation:
         #     return self._translate_with_truck(image, coordinate_paths_list, masks, frame_width, frame_height, inpaint, bg_image, truck_vector, num_frames)
@@ -75,7 +76,7 @@ class MultiCutAndDragWithTruck:
         #         raise ValueError(f"Number of rotation degrees ({len(degrees)}) must match number of masks ({masks_tensor.shape[0]})")
         #     return self._translate_and_rotate(image, coordinate_paths, masks, frame_width, frame_height, inpaint, degrees, bg_image)
 
-    def _translate_with_truck(self, image, paths_list, masks, frame_width, frame_height, bg_image=None, final_bg_image=None, truck_vector=None, num_frames=50):
+    def _translate_with_truck(self, image, paths_list, masks, frame_width, frame_height, bg_image=None, final_bg_image=None, truck_vector=None, outpainted_bg_image=None, num_frames=50):
         # Parse coordinate paths as array of arrays
         
         # Handle case where masks is a tuple
@@ -92,23 +93,30 @@ class MultiCutAndDragWithTruck:
         # Convert input image to PIL
         input_image = tensor2pil(image[0])[0]
 
+
         background = tensor2pil(bg_image)[0]
 
         final_background = tensor2pil(final_bg_image)[0]
+
+        outpainted_background = tensor2pil(outpainted_bg_image)[0]
 
         truck_trajectory, camera_vector_list, adjusted_truck_vector = self._calculate_truck_trajectory(truck_vector, background.size[0], background.size[1], num_frames)
 
         adjusted_subject_trajectories = self._calculate_subject_trajectories_with_truck_vector(paths_list, adjusted_truck_vector, num_frames)
 
-        # Create a new back of background images that is the same size as the input image
+        outpaint_x_margin = outpainted_background.size[0] - background.size[0] / 2
+        outpaint_y_margin = outpainted_background.size[1] - background.size[1] / 2
+
+        # Create a new background images that is the same size as the input image
         background_images = [None] * num_frames
         for frame_idx in range(num_frames):
             # Create a new image with the background shifted by the truck trajectory
-            stable_background = final_background.copy()
-            translated_background = background.copy()
-            stable_background.paste(translated_background, (int(truck_trajectory[frame_idx]["x"]), int(truck_trajectory[frame_idx]["y"])))
+            result_background = final_background.copy()
+            # translated_background = background.copy()
+            moving_background = outpainted_background.copy()
+            result_background.paste(moving_background, (int(truck_trajectory[frame_idx]["x"] - outpaint_x_margin), int(truck_trajectory[frame_idx]["y"] - outpaint_y_margin)))
 
-            background_images[frame_idx] = stable_background
+            background_images[frame_idx] = result_background
         
         # Print the adjusted subject trajectories
 
