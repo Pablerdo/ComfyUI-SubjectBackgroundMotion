@@ -15,6 +15,12 @@ from utility.utility import tensor2pil, pil2tensor
 script_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 class BatchImageToMask:
+    CATEGORY = "SubjectBackgroundMotion"
+    RETURN_TYPES = ("MASK",)
+    RETURN_NAMES = ("masks",)
+    FUNCTION = "batch_convert_to_mask"
+    DESCRIPTION = "Converts RGB images to binary masks using grayscale conversion and thresholding, with optional morphological dilation"
+
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
@@ -23,11 +29,6 @@ class BatchImageToMask:
                     "dilation_amount": ("INT", {"default": 0, "min": 0, "max": 100, "step": 1}),
                 }}
 
-    CATEGORY = "SubjectBackgroundMotion"
-    RETURN_TYPES = ("MASK",)
-    RETURN_NAMES = ("MASKS",)
-    FUNCTION = "batch_convert_to_mask"
-    DESCRIPTION = "Converts RGB images to binary masks using grayscale conversion and thresholding, with optional morphological dilation"
 
     def batch_convert_to_mask(self, images, threshold, dilation_amount):
         # Handle case where images is a tuple (common in ComfyUI node system)
@@ -114,18 +115,19 @@ class BatchImageToMask:
         return (masks,)
 
 class MapTrajectoriesToSegmentedMasks:
+
+    CATEGORY = "SubjectBackgroundMotion"
+    RETURN_TYPES = ("MASK", "STRING",)
+    RETURN_NAMES = ("masks", "translated_trajectories",)
+    FUNCTION = "map_trajectories"
+    DESCRIPTION = "Maps trajectories to masks by centering the start point of trajectories on mask centroids"
+
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
                     "masks": ("MASK",),
                     "trajectories": ("STRING", {"forceInput": True}),
                 }}
-
-    CATEGORY = "SubjectBackgroundMotion"
-    RETURN_TYPES = ("MASK", "STRING")
-    RETURN_NAMES = ("MASKS", "TRANSLATED_TRAJECTORIES")
-    FUNCTION = "map_trajectories"
-    DESCRIPTION = "Maps trajectories to masks by centering the start point of trajectories on mask centroids"
 
     def map_trajectories(self, masks, trajectories):
         # Parse trajectories JSON

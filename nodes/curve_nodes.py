@@ -13,7 +13,7 @@ from utility.utility import pil2tensor, tensor2pil
 
 class MultiCutAndDragWithTruck:
     RETURN_TYPES = ("IMAGE", "MASK",)
-    RETURN_NAMES = ("image","mask", )
+    RETURN_NAMES = ("image","mask",)
     FUNCTION = "multi_cut_and_drag_with_truck"
     CATEGORY = "SubjectBackgroundMotion"
     DESCRIPTION = """
