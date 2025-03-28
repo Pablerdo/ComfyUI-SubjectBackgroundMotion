@@ -136,13 +136,14 @@ class MultiCutAndDragWithTruck:
         truck_trajectory = self._calculate_truck_trajectory(truck_vector, background.size[0], background.size[1], num_frames)
 
         # Create a new back of background images that is the same size as the input image
-        background_images = []
+        background_images = [None] * num_frames
         for frame_idx in range(num_frames):
-            background_images.append(background.copy())
             # Create a new image with the background shifted by the truck trajectory
-            new_background = Image.new("RGB", background.size)
-            new_background.paste(background, (int(truck_trajectory[frame_idx]["x"]), int(truck_trajectory[frame_idx]["y"])))
-            background_images[frame_idx] = new_background
+            stable_background = background.copy()
+            translated_background = background.copy()
+            stable_background.paste(translated_background, (int(truck_trajectory[frame_idx]["x"]), int(truck_trajectory[frame_idx]["y"])))
+            
+            background_images[frame_idx] = stable_background
 
         # Cut out each masked region and store info
         cut_regions = []
