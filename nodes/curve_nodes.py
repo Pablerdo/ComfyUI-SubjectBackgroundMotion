@@ -50,7 +50,7 @@ class MultiCutAndDragWithTruck:
             raise ValueError("Background image is required")
                     
         coordinate_paths_list = json.loads(coordinate_paths)
-        
+
         truck_vector = json.loads(truck_vector)
 
         # if len(coordinate_paths_list) != num_frames:
@@ -137,7 +137,7 @@ class MultiCutAndDragWithTruck:
 
         # Create a new back of background images that is the same size as the input image
         background_images = []
-        for frame_idx in range(num_frames + 1):
+        for frame_idx in range(num_frames):
             background_images.append(background.copy())
             # Create a new image with the background shifted by the truck trajectory
             new_background = Image.new("RGB", background.size)
@@ -186,7 +186,7 @@ class MultiCutAndDragWithTruck:
                 })
 
         # Create batch of images with cut regions at different positions
-        for frame_idx in range(num_frames + 1):
+        for frame_idx in range(num_frames):
             # Get the background image for this frame
             # new_image = background.copy()
             new_image = background_images[frame_idx].copy()
@@ -302,7 +302,7 @@ class MultiCutAndDragWithTruck:
                 })
 
         # Create batch of images with cut regions at different positions
-        for frame_idx in range(num_frames + 1):
+        for frame_idx in range(num_frames):
             new_image = background.copy()
             new_mask = Image.new("L", (frame_width, frame_height), 0)
 
