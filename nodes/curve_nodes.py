@@ -135,7 +135,7 @@ class MultiCutAndDragWithTruck:
 
         truck_trajectory, adjusted_truck_vector = self._calculate_truck_trajectory(truck_vector, background.size[0], background.size[1], num_frames)
 
-        adjusted_subject_trajectories = self._calculate_subject_trajectories_with_camera_movement(paths_list, adjusted_truck_vector, num_frames)
+        adjusted_subject_trajectories = self._calculate_subject_trajectories_with_truck_vector(paths_list, truck_vector, num_frames)
 
         # Create a new back of background images that is the same size as the input image
         background_images = [None] * num_frames
@@ -146,6 +146,17 @@ class MultiCutAndDragWithTruck:
             stable_background.paste(translated_background, (int(truck_trajectory[frame_idx]["x"]), int(truck_trajectory[frame_idx]["y"])))
 
             background_images[frame_idx] = stable_background
+        
+        # Print the adjusted subject trajectories
+
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print("Adjusted subject trajectories:")
+        print(adjusted_subject_trajectories)
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        # Print the truck trajectory
+        print("Truck trajectory:")
+        print(truck_trajectory)
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
         # Cut out each masked region and store info
         cut_regions = []
@@ -370,7 +381,7 @@ class MultiCutAndDragWithTruck:
 
         return trajectory, camera_vector_list
     
-    def _calculate_subject_trajectories_with_camera_movement(self, subject_trajectories, camera_vector_list, num_frames):
+    def _calculate_subject_trajectories_with_truck_vector(self, subject_trajectories, truck_vector, num_frames):
         # This function will calculate the trajectory of the subject, given the camera movement.
         # The camera movement is dealt with by receiving a camera_movement_
         # The trajectory vector is the amount that the subject will move in each frame, the camera vector is the amount that the camera will move in each frame. 
@@ -383,6 +394,8 @@ class MultiCutAndDragWithTruck:
 
         adjusted_subject_trajectories = []
 
+        frame_relevant_truck_vector = {"x": truck_vector["x"] * (1 / num_frames), "y": truck_vector["y"] * (1 / num_frames)}
+
        # Process each subject trajectory separately.
         for subject_traj, subject_vectors in zip(subject_trajectories, subject_vectors_list):
             adjusted_traj = []
@@ -393,9 +406,8 @@ class MultiCutAndDragWithTruck:
             # For each frame (except the first), compute the new position.
             for i in range(num_frames - 1):
                 subj_vector = subject_vectors[i]
-                cam_vector = camera_vector_list[i]
                 # Sum the subject's movement and the camera movement.
-                adjusted_vector = vector_utilities.decrease_vectors(subj_vector, cam_vector)
+                adjusted_vector = vector_utilities.add_vectors(subj_vector, frame_relevant_truck_vector)
                 # Update the current position using the adjusted movement.
                 current_position = {
                     "x": current_position["x"] + adjusted_vector["x"],
