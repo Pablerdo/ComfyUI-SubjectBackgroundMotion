@@ -350,6 +350,7 @@ class PadForOutpaintGeneral:
             }
         }
 
+    RETURN_NAMES = ("image", "mask",)
     RETURN_TYPES = ("IMAGE", "MASK")
     FUNCTION = "expand_image"
     CATEGORY = "SubjectBackgroundMotion"
