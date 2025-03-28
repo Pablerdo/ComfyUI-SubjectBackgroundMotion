@@ -257,6 +257,8 @@ class PadAndTranslateImageForOutpainting:
         return {"required": {
                     "bg_image": ("IMAGE",),
                     "truck_vector": ("STRING", {"forceInput": True}),
+                    "frame_width": ("INT", {"forceInput": True}),
+                    "frame_height": ("INT", {"forceInput": True}),
                     "feathering": ("INT", {"default": 0, "min": 0, "max": 100, "step": 1}),
                 }}
         
