@@ -245,3 +245,94 @@ class MapTrajectoriesToSegmentedMasks:
         return (masks, translated_trajectories_json)
 
 
+class PadAndTranslateImageForOutpainting:
+    CATEGORY = "SubjectBackgroundMotion"
+    RETURN_TYPES = ("IMAGE", "MASK",)
+    RETURN_NAMES = ("final_background_placement", "placement_mask",)
+    FUNCTION = "pad_and_translate_image_for_outpainting"
+    DESCRIPTION = "Pads and translates an image for outpainting"
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+                    "bg_image": ("IMAGE",),
+                    "adjusted_truck_vector": ("STRING", {"forceInput": True}),
+                    "feathering": ("INT", {"default": 0, "min": 0, "max": 100, "step": 1}),
+                }}
+        
+    def pad_and_translate_image_for_outpainting(self, bg_image, truck_vector, frame_width, frame_height, feathering=0):
+        # Parse the final background placement
+        truck_vector = json.loads(truck_vector)
+
+        adjusted_truck_vector = {"x": ((0.25 * frame_width) * truck_vector["x"]), "y": ((0.25 * frame_height) * truck_vector["y"])}
+        
+        # Get the dimensions of the background image
+        if isinstance(bg_image, tuple):
+            bg_image = bg_image[0]
+            
+        B, C, H, W = bg_image.shape
+        
+        # Create a new tensor with the same dimensions as the original
+        translated_image = torch.ones((B, C, H, W), dtype=bg_image.dtype, device=bg_image.device) * 0.5
+        
+        # Create a mask tensor
+        mask = torch.zeros((H, W), dtype=torch.float32, device=bg_image.device)
+        
+        # Calculate source and target coordinates for the translation
+        x_offset = int(adjusted_truck_vector["x"])
+        y_offset = int(adjusted_truck_vector["y"])
+        
+        # Calculate the overlapping regions between source and target
+        # For target (where to paste in translated_image)
+        target_x_start = max(0, x_offset)
+        target_y_start = max(0, y_offset)
+        target_x_end = min(W, W + x_offset)
+        target_y_end = min(H, H + y_offset)
+        
+        # For source (what to take from bg_image)
+        source_x_start = max(0, -x_offset)
+        source_y_start = max(0, -y_offset)
+        source_x_end = min(W, W - x_offset)
+        source_y_end = min(H, H - y_offset)
+        
+        # Copy the valid region
+        translated_image[:, :, 
+                        target_y_start:target_y_end,
+                        target_x_start:target_x_end] = bg_image[:, :,
+                                                               source_y_start:source_y_end,
+                                                               source_x_start:source_x_end]
+        
+        # Set mask to 1 in the valid region
+        mask[target_y_start:target_y_end, target_x_start:target_x_end] = 1.0
+
+        # Apply feathering if requested
+        if feathering > 0:
+            # Create temporary mask for feathering calculations
+            temp_mask = mask.clone()
+            
+            for i in range(H):
+                for j in range(W):
+                    if mask[i, j] == 1.0:
+                        # Calculate distance from edges
+                        dt = i - target_y_start if i < target_y_start + feathering else H
+                        db = target_y_end - i if i > target_y_end - feathering else H
+                        dl = j - target_x_start if j < target_x_start + feathering else W
+                        dr = target_x_end - j if j > target_x_end - feathering else W
+                        
+                        d = min(dt, db, dl, dr)
+                        
+                        if d < feathering:
+                            v = (feathering - d) / feathering
+                            temp_mask[i, j] = 1.0 - (v * v)
+            
+            mask = temp_mask
+
+        # Expand mask dimensions to match expected format [B, H, W]
+        mask = mask.unsqueeze(0).expand(B, -1, -1)
+        
+        return (translated_image, mask)
+
+
+        
+        
+        
