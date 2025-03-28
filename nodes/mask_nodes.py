@@ -256,7 +256,7 @@ class PadAndTranslateImageForOutpainting:
     def INPUT_TYPES(s):
         return {"required": {
                     "bg_image": ("IMAGE",),
-                    "adjusted_truck_vector": ("STRING", {"forceInput": True}),
+                    "truck_vector": ("STRING", {"forceInput": True}),
                     "feathering": ("INT", {"default": 0, "min": 0, "max": 100, "step": 1}),
                 }}
         
