@@ -14,6 +14,8 @@ from utility.utility import tensor2pil, pil2tensor
 
 script_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+MAX_RESOLUTION=16384
+
 class BatchImageToMask:
     CATEGORY = "SubjectBackgroundMotion"
     RETURN_TYPES = ("MASK",)
@@ -336,6 +338,11 @@ class PadAndTranslateImageForOutpainting:
         
 class PadForOutpaintGeneral:
 
+    RETURN_TYPES = ("IMAGE", "MASK",)
+    RETURN_NAMES = ("image", "mask",)
+    FUNCTION = "expand_image"
+    CATEGORY = "SubjectBackgroundMotion"
+
     # credits to ComfyAnon but I need one that had black background
     @classmethod
     def INPUT_TYPES(s):
@@ -349,11 +356,6 @@ class PadForOutpaintGeneral:
                 "feathering": ("INT", {"default": 40, "min": 0, "max": MAX_RESOLUTION, "step": 1}),
             }
         }
-
-    RETURN_NAMES = ("image", "mask",)
-    RETURN_TYPES = ("IMAGE", "MASK",)
-    FUNCTION = "expand_image"
-    CATEGORY = "SubjectBackgroundMotion"
 
     def expand_image(self, image, left, top, right, bottom, feathering):
         d1, d2, d3, d4 = image.size()

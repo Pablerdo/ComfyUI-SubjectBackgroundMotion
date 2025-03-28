@@ -3,7 +3,7 @@ name = "comfyui-subjectbackgroundmotion"
 description = "Nodes for subject background motion"
 version = "1.0.5"
 license = {file = "LICENSE"}
-dependencies = ["librosa", "numpy", "pillow>=10.3.0", "scipy", "color-matcher", "matplotlib", "huggingface_hub", "peft"]
+dependencies = ["librosa", "numpy", "pillow>=10.3.0", "scipy", "color-matcher", "matplotlib", "huggingface_hub", "peft", "torch", "torchvision"]
 
 [project.urls]
 Repository = "https://github.com/Pablerdo/ComfyUI-SubjectBackgroundMotion"
