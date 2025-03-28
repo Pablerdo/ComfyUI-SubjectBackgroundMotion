@@ -1,11 +1,12 @@
 from .nodes.curve_nodes import MultiCutAndDragWithTruck
 from .nodes.mask_nodes import BatchImageToMask
 from .nodes.mask_nodes import MapTrajectoriesToSegmentedMasks
-
+from .nodes.mask_nodes import PadAndTranslateImageForOutpainting
 NODE_CONFIG = {
     "MultiCutAndDragWithTruck": {"class": MultiCutAndDragWithTruck, "name": "MultiCutAndDragWithTruck"},
     "BatchImageToMask": {"class": BatchImageToMask, "name": "BatchImageToMask"},
-    "MapTrajectoriesToSegmentedMasks": {"class": MapTrajectoriesToSegmentedMasks, "name": "MapTrajectoriesToSegmentedMasks"}
+    "MapTrajectoriesToSegmentedMasks": {"class": MapTrajectoriesToSegmentedMasks, "name": "MapTrajectoriesToSegmentedMasks"},
+    "PadAndTranslateImageForOutpainting": {"class": PadAndTranslateImageForOutpainting, "name": "PadAndTranslateImageForOutpainting"}
 }
 
 def generate_node_mappings(node_config):
