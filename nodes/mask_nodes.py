@@ -286,7 +286,7 @@ class PadAndTranslateImageForOutpainting:
         gray_background = Image.new("RGB", (pil_bg_image_width, pil_bg_image_height), color=(128, 128, 128))
         
         # Create a mask image (black initially)
-        mask_image = Image.new("L", (pil_bg_image_width, pil_bg_image_height), color=0)
+        mask_image = Image.new("L", (pil_bg_image_width, pil_bg_image_height), color=255)
         
         # Calculate paste position
         paste_x = max(0, x_offset)
@@ -305,7 +305,7 @@ class PadAndTranslateImageForOutpainting:
             cropped_image = pil_bg_image
         
         # Create a mask for the pasted region
-        paste_mask = Image.new("L", cropped_image.size, color=255)
+        paste_mask = Image.new("L", cropped_image.size, color=0)
         
         # Paste the image onto the gray background
         gray_background.paste(cropped_image, (paste_x, paste_y), None)
