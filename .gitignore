@@ -3,3 +3,11 @@ __pycache__
 *.gif
 nodes/loader_nodes.py
 .DS_Store
+test.py
+*.jpg
+*.png
+*.jpeg
+*.webp
+*.gif
+*.mp4
+*.avi

@@ -263,76 +263,71 @@ class PadAndTranslateImageForOutpainting:
                 }}
         
     def pad_and_translate_image_for_outpainting(self, bg_image, truck_vector, frame_width, frame_height, feathering=0):
-        # Parse the final background placement
+        # Parse the truck vector
         truck_vector = json.loads(truck_vector)
 
-        adjusted_truck_vector = {"x": ((0.25 * frame_width) * truck_vector["x"]), "y": ((0.25 * frame_height) * truck_vector["y"])}
+        # Calculate pixel offset from the truck vector
+        x_offset = int((0.25 * frame_width) * truck_vector["x"])
+        y_offset = int((0.25 * frame_height) * truck_vector["y"])
         
         # Get the dimensions of the background image
         if isinstance(bg_image, tuple):
             bg_image = bg_image[0]
-            
-        B, C, H, W = bg_image.shape
         
-        # Create a new tensor with the same dimensions as the original
-        translated_image = torch.ones((B, C, H, W), dtype=bg_image.dtype, device=bg_image.device) * 0.5
+        pil_bg_image = tensor2pil(bg_image[0])[0]
         
-        # Create a mask tensor
-        mask = torch.zeros((H, W), dtype=torch.float32, device=bg_image.device)
-        
-        # Calculate source and target coordinates for the translation
-        x_offset = int(adjusted_truck_vector["x"])
-        y_offset = int(adjusted_truck_vector["y"])
-        
-        # Calculate the overlapping regions between source and target
-        # For target (where to paste in translated_image)
-        target_x_start = max(0, x_offset)
-        target_y_start = max(0, y_offset)
-        target_x_end = min(W, W + x_offset)
-        target_y_end = min(H, H + y_offset)
-        
-        # For source (what to take from bg_image)
-        source_x_start = max(0, -x_offset)
-        source_y_start = max(0, -y_offset)
-        source_x_end = min(W, W - x_offset)
-        source_y_end = min(H, H - y_offset)
-        
-        # Copy the valid region
-        translated_image[:, :, 
-                        target_y_start:target_y_end,
-                        target_x_start:target_x_end] = bg_image[:, :,
-                                                               source_y_start:source_y_end,
-                                                               source_x_start:source_x_end]
-        
-        # Set mask to 1 in the valid region
-        mask[target_y_start:target_y_end, target_x_start:target_x_end] = 1.0
+        pil_bg_image_width, pil_bg_image_height = pil_bg_image.width, pil_bg_image.height
 
+        # Create output tensors
+        translated_images = []
+        masks = []
+
+        # Create a gray background image
+        gray_background = Image.new("RGB", (pil_bg_image_width, pil_bg_image_height), color=(128, 128, 128))
+        
+        # Create a mask image (black initially)
+        mask_image = Image.new("L", (pil_bg_image_width, pil_bg_image_height), color=0)
+        
+        # Calculate paste position
+        paste_x = max(0, x_offset)
+        paste_y = max(0, y_offset)
+        
+        # Calculate how much of the original image to use
+        crop_left = max(0, -x_offset)
+        crop_top = max(0, -y_offset)
+        crop_right = min(pil_bg_image_width, pil_bg_image_width - x_offset if x_offset < 0 else pil_bg_image_width)
+        crop_bottom = min(pil_bg_image_height, pil_bg_image_height - y_offset if y_offset < 0 else pil_bg_image_height)
+        
+        # Crop the original image if needed
+        if crop_left > 0 or crop_top > 0 or crop_right < pil_bg_image_width or crop_bottom < pil_bg_image_height:
+            cropped_image = pil_bg_image.crop((crop_left, crop_top, crop_right, crop_bottom))
+        else:
+            cropped_image = pil_bg_image
+        
+        # Create a mask for the pasted region
+        paste_mask = Image.new("L", cropped_image.size, color=255)
+        
+        # Paste the image onto the gray background
+        gray_background.paste(cropped_image, (paste_x, paste_y), None)
+        
+        # Paste the mask
+        mask_image.paste(paste_mask, (paste_x, paste_y), None)
+        
         # Apply feathering if requested
         if feathering > 0:
-            # Create temporary mask for feathering calculations
-            temp_mask = mask.clone()
-            
-            for i in range(H):
-                for j in range(W):
-                    if mask[i, j] == 1.0:
-                        # Calculate distance from edges
-                        dt = i - target_y_start if i < target_y_start + feathering else H
-                        db = target_y_end - i if i > target_y_end - feathering else H
-                        dl = j - target_x_start if j < target_x_start + feathering else W
-                        dr = target_x_end - j if j > target_x_end - feathering else W
-                        
-                        d = min(dt, db, dl, dr)
-                        
-                        if d < feathering:
-                            v = (feathering - d) / feathering
-                            temp_mask[i, j] = 1.0 - (v * v)
-            
-            mask = temp_mask
-
-        # Expand mask dimensions to match expected format [B, H, W]
-        mask = mask.unsqueeze(0).expand(B, -1, -1)
+            mask_image = mask_image.filter(ImageFilter.GaussianBlur(radius=feathering/3))
         
-        return (translated_image, mask)
+        # Convert back to tensor
+        translated_image = pil2tensor(gray_background)
+        mask_tensor = pil2tensor(mask_image)
+        
+        masks.append(mask_tensor)
+        
+        # # Stack results
+        # out_images = torch.cat(translated_images, dim=0)
+        out_masks = torch.cat(masks, dim=0)
+        
+        return (translated_image, out_masks)
 
 
         
