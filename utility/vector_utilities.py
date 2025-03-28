@@ -3,6 +3,9 @@
 def add_vectors(vector1, vector2):
     return {"x": vector1["x"] + vector2["x"], "y": vector1["y"] + vector2["y"]}
 
+def decrease_vectors(vector1, vector2):
+    return {"x": vector1["x"] - vector2["x"], "y": vector1["y"] - vector2["y"]}
+
 def trajectory_list_to_vector_list(trajectory_list):
     """
     Convert a list of trajectories (each a list of coordinates) to a list of trajectories of movement vectors.

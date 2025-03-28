@@ -395,7 +395,7 @@ class MultiCutAndDragWithTruck:
                 subj_vector = subject_vectors[i]
                 cam_vector = camera_vector_list[i]
                 # Sum the subject's movement and the camera movement.
-                adjusted_vector = vector_utilities.add_vectors(subj_vector, cam_vector)
+                adjusted_vector = vector_utilities.decrease_vectors(subj_vector, cam_vector)
                 # Update the current position using the adjusted movement.
                 current_position = {
                     "x": current_position["x"] + adjusted_vector["x"],
