@@ -50,6 +50,8 @@ class MultiCutAndDragWithTruck:
             raise ValueError("Background image is required")
                     
         coordinate_paths_list = json.loads(coordinate_paths)
+        
+        truck_vector = json.loads(truck_vector)
 
         # if len(coordinate_paths_list) != num_frames:
         #     raise ValueError(f"Number of coordinate paths ({len(coordinate_paths_list)}) must match number of frames ({num_frames})")
@@ -131,7 +133,6 @@ class MultiCutAndDragWithTruck:
 
         background = tensor2pil(bg_image)[0]
 
-        truck_vector = json.loads(truck_vector)
         truck_trajectory = self._calculate_truck_trajectory(truck_vector, background.size[0], background.size[1], num_frames)
 
         # Create a new back of background images that is the same size as the input image
@@ -342,7 +343,6 @@ class MultiCutAndDragWithTruck:
         # The truck trajectory will be the path of the top left of the original, inpainted background.
 
         # Parse the truck vector
-        truck_vector = json.loads(truck_vector)
         
         # Extract the start and end points, the adjusted_tuck_vector is the full, raw distance that the bg_image will be moved by
         adjusted_truck_vector = {"x": ((0.25 * frame_width) * truck_vector["x"]), "y": ((0.25 * frame_height) * truck_vector["y"])}
