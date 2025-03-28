@@ -133,7 +133,9 @@ class MultiCutAndDragWithTruck:
 
         background = tensor2pil(bg_image)[0]
 
-        truck_trajectory = self._calculate_truck_trajectory(truck_vector, background.size[0], background.size[1], num_frames)
+        truck_trajectory, adjusted_truck_vector = self._calculate_truck_trajectory(truck_vector, background.size[0], background.size[1], num_frames)
+
+        adjusted_subject_trajectories = self._calculate_subject_trajectories_with_camera_movement(paths_list, adjusted_truck_vector, num_frames)
 
         # Create a new back of background images that is the same size as the input image
         background_images = [None] * num_frames
@@ -142,7 +144,7 @@ class MultiCutAndDragWithTruck:
             stable_background = background.copy()
             translated_background = background.copy()
             stable_background.paste(translated_background, (int(truck_trajectory[frame_idx]["x"]), int(truck_trajectory[frame_idx]["y"])))
-            
+
             background_images[frame_idx] = stable_background
 
         # Cut out each masked region and store info
@@ -183,7 +185,7 @@ class MultiCutAndDragWithTruck:
                     'mask': cut_mask,
                     'width': cut_width,
                     'height': cut_height,
-                    'coords': paths_list[mask_idx]
+                    'coords': adjusted_subject_trajectories[mask_idx]
                 })
 
         # Create batch of images with cut regions at different positions
@@ -359,5 +361,51 @@ class MultiCutAndDragWithTruck:
                 "y": 0 + (adjusted_truck_vector["y"]) * i/num_frames
             })
 
-        return trajectory
+        camera_vector_list = []
+        for i in range(num_frames):
+            camera_vector_list.append({
+                "x": adjusted_truck_vector["x"] * i/num_frames,
+                "y": adjusted_truck_vector["y"] * i/num_frames,
+            })
+
+        return trajectory, camera_vector_list
+    
+    def _calculate_subject_trajectories_with_camera_movement(self, subject_trajectories, camera_vector_list, num_frames):
+        # This function will calculate the trajectory of the subject, given the camera movement.
+        # The camera movement is dealt with by receiving a camera_movement_
+        # The trajectory vector is the amount that the subject will move in each frame, the camera vector is the amount that the camera will move in each frame. 
+        # Thus, we need to sum them in order to get the total movement of the subject, in the context of the video window
+
+        # Convert the subject trajectories to a list of vectors here
+        import utility.vector_utilities as vector_utilities
+
+        subject_vectors_list = vector_utilities.trajectory_list_to_vector_list(subject_trajectories)
+
+        adjusted_subject_trajectories = []
+
+       # Process each subject trajectory separately.
+        for subject_traj, subject_vectors in zip(subject_trajectories, subject_vectors_list):
+            adjusted_traj = []
+            # Use the first coordinate as the starting position.
+            current_position = subject_traj[0]
+            adjusted_traj.append(current_position)
+            
+            # For each frame (except the first), compute the new position.
+            for i in range(num_frames - 1):
+                subj_vector = subject_vectors[i]
+                cam_vector = camera_vector_list[i]
+                # Sum the subject's movement and the camera movement.
+                adjusted_vector = vector_utilities.add_vectors(subj_vector, cam_vector)
+                # Update the current position using the adjusted movement.
+                current_position = {
+                    "x": current_position["x"] + adjusted_vector["x"],
+                    "y": current_position["y"] + adjusted_vector["y"]
+                }
+                adjusted_traj.append(current_position)
+            
+            adjusted_subject_trajectories.append(adjusted_traj)
+        
+        return adjusted_subject_trajectories
+        
+
     
