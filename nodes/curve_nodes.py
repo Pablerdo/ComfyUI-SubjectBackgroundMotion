@@ -51,8 +51,8 @@ class MultiCutAndDragWithTruck:
                     
         coordinate_paths_list = json.loads(coordinate_paths)
 
-        if len(coordinate_paths_list) != num_frames:
-            raise ValueError(f"Number of coordinate paths ({len(coordinate_paths_list)}) must match number of frames ({num_frames})")
+        # if len(coordinate_paths_list) != num_frames:
+        #     raise ValueError(f"Number of coordinate paths ({len(coordinate_paths_list)}) must match number of frames ({num_frames})")
         
         # Handle case where masks is a tuple (common in ComfyUI node system)
         masks_tensor = masks
