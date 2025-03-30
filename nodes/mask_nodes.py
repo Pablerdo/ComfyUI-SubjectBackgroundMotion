@@ -8,7 +8,6 @@ from contextlib import nullcontext
 import os
 import json
 # import model_management
- # from nodes import MAX_RESOLUTION
 
 from utility.utility import tensor2pil, pil2tensor
 

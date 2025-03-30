@@ -36,7 +36,6 @@ class MultiCutAndDragWithTruck:
                 "frame_height": ("INT", {"default": 512,"min": 16, "max": 4096, "step": 1}),
                 # "rotation": ("BOOLEAN", {"default": False}),
                 "bg_image": ("IMAGE",),
-                "final_bg_image": ("IMAGE",),
                 "outpainted_bg_image": ("IMAGE",),
                 "num_frames": ("INT", {"forceInput": True}),
             },
@@ -46,13 +45,10 @@ class MultiCutAndDragWithTruck:
             }
         }
 
-    def multi_cut_and_drag_with_truck(self, image, coordinate_paths, masks, frame_width, frame_height, num_frames,bg_image=None, final_bg_image=None, truck_vector=None, outpainted_bg_image=None, ): # rotation=False, bg_image=None, truck_vector=None, num_frames, degrees=[0.0]):
+    def multi_cut_and_drag_with_truck(self, image, coordinate_paths, masks, frame_width, frame_height, num_frames, bg_image=None, truck_vector=None, outpainted_bg_image=None): # rotation=False, bg_image=None, truck_vector=None, num_frames, degrees=[0.0]):
 
         if bg_image is None:
             raise ValueError("Background image is required")
-        
-        if final_bg_image is None:
-            final_bg_image = bg_image
                     
         coordinate_paths_list = json.loads(coordinate_paths)
 
@@ -66,7 +62,7 @@ class MultiCutAndDragWithTruck:
         if isinstance(masks, tuple):
             masks_tensor = masks[0]  # Extract the mask tensor from the tuple
             
-        return self._translate_with_truck(image, coordinate_paths_list, masks, frame_width, frame_height, bg_image, final_bg_image, truck_vector, outpainted_bg_image, num_frames)
+        return self._translate_with_truck(image, coordinate_paths_list, masks, frame_width, frame_height,  num_frames, bg_image, truck_vector, outpainted_bg_image)
     
         # if not rotation:
         #     return self._translate_with_truck(image, coordinate_paths_list, masks, frame_width, frame_height, inpaint, bg_image, truck_vector, num_frames)
@@ -76,7 +72,7 @@ class MultiCutAndDragWithTruck:
         #         raise ValueError(f"Number of rotation degrees ({len(degrees)}) must match number of masks ({masks_tensor.shape[0]})")
         #     return self._translate_and_rotate(image, coordinate_paths, masks, frame_width, frame_height, inpaint, degrees, bg_image)
 
-    def _translate_with_truck(self, image, paths_list, masks, frame_width, frame_height, num_frames, bg_image=None, final_bg_image=None, truck_vector=None, outpainted_bg_image=None,):
+    def _translate_with_truck(self, image, paths_list, masks, frame_width, frame_height, num_frames, bg_image=None, truck_vector=None, outpainted_bg_image=None):
         # Parse coordinate paths as array of arrays
         
         # Handle case where masks is a tuple
@@ -93,10 +89,7 @@ class MultiCutAndDragWithTruck:
         # Convert input image to PIL
         input_image = tensor2pil(image[0])[0]
 
-
         background = tensor2pil(bg_image)[0]
-
-        final_background = tensor2pil(final_bg_image)[0]
 
         outpainted_background = tensor2pil(outpainted_bg_image)[0]
 
@@ -198,7 +191,7 @@ class MultiCutAndDragWithTruck:
 
         return (out_images, out_masks)
 
-    # def _translate_and_rotate(self, image, coordinate_paths, masks, frame_width, frame_height, inpaint, degrees, bg_image=None, final_bg_image=None, truck_vector=None, num_frames):
+    # def _translate_and_rotate(self, image, coordinate_paths, masks, frame_width, frame_height, inpaint, degrees, bg_image=None, truck_vector=None, num_frames):
     #     # Parse coordinate paths as array of arrays
     #     paths_list = json.loads(coordinate_paths)
         
