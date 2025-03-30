@@ -46,7 +46,7 @@ class MultiCutAndDragWithTruck:
             }
         }
 
-    def multi_cut_and_drag_with_truck(self, image, coordinate_paths, masks, frame_width, frame_height, bg_image=None, final_bg_image=None, truck_vector=None, outpainted_bg_image=None, num_frames=49): # rotation=False, bg_image=None, truck_vector=None, num_frames=49, degrees=[0.0]):
+    def multi_cut_and_drag_with_truck(self, image, coordinate_paths, masks, frame_width, frame_height, num_frames,bg_image=None, final_bg_image=None, truck_vector=None, outpainted_bg_image=None, ): # rotation=False, bg_image=None, truck_vector=None, num_frames, degrees=[0.0]):
 
         if bg_image is None:
             raise ValueError("Background image is required")
@@ -76,7 +76,7 @@ class MultiCutAndDragWithTruck:
         #         raise ValueError(f"Number of rotation degrees ({len(degrees)}) must match number of masks ({masks_tensor.shape[0]})")
         #     return self._translate_and_rotate(image, coordinate_paths, masks, frame_width, frame_height, inpaint, degrees, bg_image)
 
-    def _translate_with_truck(self, image, paths_list, masks, frame_width, frame_height, bg_image=None, final_bg_image=None, truck_vector=None, outpainted_bg_image=None, num_frames=50):
+    def _translate_with_truck(self, image, paths_list, masks, frame_width, frame_height, num_frames, bg_image=None, final_bg_image=None, truck_vector=None, outpainted_bg_image=None,):
         # Parse coordinate paths as array of arrays
         
         # Handle case where masks is a tuple
@@ -198,7 +198,7 @@ class MultiCutAndDragWithTruck:
 
         return (out_images, out_masks)
 
-    # def _translate_and_rotate(self, image, coordinate_paths, masks, frame_width, frame_height, inpaint, degrees, bg_image=None, final_bg_image=None, truck_vector=None, num_frames=49):
+    # def _translate_and_rotate(self, image, coordinate_paths, masks, frame_width, frame_height, inpaint, degrees, bg_image=None, final_bg_image=None, truck_vector=None, num_frames):
     #     # Parse coordinate paths as array of arrays
     #     paths_list = json.loads(coordinate_paths)
         
@@ -374,7 +374,7 @@ class MultiCutAndDragWithTruck:
             current_position = subject_traj[0]
             adjusted_traj.append(current_position)
             
-            # For each frame (except the first), compute the new position.
+            # For each frame (except the last), compute the new position.
             for i in range(num_frames - 1):
                 subj_vector = subject_vectors[i]
                 # Sum the subject's movement and the camera movement.
