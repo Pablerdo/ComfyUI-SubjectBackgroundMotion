@@ -104,7 +104,7 @@ class MultiCutAndDragWithTruck:
         background_images = [None] * num_frames
         for frame_idx in range(num_frames):
             # Create a new image with the background shifted by the truck trajectory
-            result_background = final_background.copy()
+            result_background = background.copy()
             # translated_background = background.copy()
             moving_background = outpainted_background.copy()
             result_background.paste(moving_background, (int(truck_trajectory[frame_idx]["x"] - outpaint_x_margin), int(truck_trajectory[frame_idx]["y"] - outpaint_y_margin)))
