@@ -337,7 +337,7 @@ class MultiCutAndDragWithTruck:
 
         # The end point is the middle of the image plus the adjusted truck vector.
         trajectory = []
-        for i in range(50):
+        for i in range(num_frames + 1):
             trajectory.append({
                 "x": 0 + (adjusted_truck_vector["x"]) * i/num_frames,
                 "y": 0 + (adjusted_truck_vector["y"]) * i/num_frames
