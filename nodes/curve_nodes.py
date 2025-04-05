@@ -40,20 +40,21 @@ class MultiCutAndDragWithTruck:
                 "num_frames": ("INT", {"forceInput": True}),
             },
             "optional": {
-                "truck_vector": ("STRING", {"forceInput": True}),
+                "camera_motion": ("STRING", {"forceInput": True}),
                 # "degrees": ("STRING", {"forceInput": True}),
             }
         }
 
-    def multi_cut_and_drag_with_truck(self, image, coordinate_paths, masks, frame_width, frame_height, num_frames, bg_image=None, truck_vector=None, outpainted_bg_image=None): # rotation=False, bg_image=None, truck_vector=None, num_frames, degrees=[0.0]):
+    def multi_cut_and_drag_with_truck(self, image, coordinate_paths, masks, frame_width, frame_height, num_frames, bg_image=None, camera_motion=None, outpainted_bg_image=None): # rotation=False, bg_image=None, truck_vector=None, num_frames, degrees=[0.0]):
 
         if bg_image is None:
             raise ValueError("Background image is required")
                     
         coordinate_paths_list = json.loads(coordinate_paths)
 
-        truck_vector = json.loads(truck_vector)
+        camera_motion = json.loads(camera_motion)
 
+        truck_vector = camera_motion["truck_vector"]
         # if len(coordinate_paths_list) != num_frames:
         #     raise ValueError(f"Number of coordinate paths ({len(coordinate_paths_list)}) must match number of frames ({num_frames})")
         
