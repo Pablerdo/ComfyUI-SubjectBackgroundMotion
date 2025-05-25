@@ -187,14 +187,23 @@ class MultiCutAndDragWithTruck:
                 current_image = region['image'].copy()
                 current_mask = region['mask'].copy()
                 
-                # The centroid for transformations is the trajectory coordinate for this frame
+                # The trajectory coordinates are where we want the centroid to be in the final output
                 trajectory_x = region['coords'][frame_idx]['x']
                 trajectory_y = region['coords'][frame_idx]['y']
                 
-                # Calculate centroid position within the cropped region
-                # This is where the trajectory point falls within the cropped image
-                centroid_x = trajectory_x - region['crop_offset_x']
-                centroid_y = trajectory_y - region['crop_offset_y']
+                # Calculate the actual centroid position within the cropped region
+                # This is the center of mass of the white pixels in the mask
+                mask_array = np.array(current_mask)
+                y_indices, x_indices = np.where(mask_array > 128)
+                
+                if len(x_indices) > 0 and len(y_indices) > 0:
+                    # Calculate centroid within the cropped image
+                    centroid_x = x_indices.mean()
+                    centroid_y = y_indices.mean()
+                else:
+                    # Fallback to center of cropped image if no mask pixels
+                    centroid_x = current_image.width / 2
+                    centroid_y = current_image.height / 2
                 
                 # Create a large working canvas that can accommodate any transformation
                 # Make it large enough to handle scaling up and rotation without clipping
@@ -229,7 +238,7 @@ class MultiCutAndDragWithTruck:
                     working_mask = working_mask.rotate(rotation_angle, resample=Image.BICUBIC, expand=False)
                 
                 # Now we have the fully transformed image/mask with centroid at canvas center
-                # Calculate where to place this on the final output so trajectory point is correct
+                # Calculate where to place this on the final output so the centroid lands on trajectory point
                 final_paste_x = int(trajectory_x - canvas_center)
                 final_paste_y = int(trajectory_y - canvas_center)
                 
