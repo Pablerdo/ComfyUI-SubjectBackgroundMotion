@@ -4,6 +4,7 @@ __pycache__
 nodes/loader_nodes.py
 .DS_Store
 test.py
+multi_cut_and_drag_test.py
 *.jpg
 *.png
 *.jpeg
